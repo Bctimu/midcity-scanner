@@ -1,33 +1,60 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>QR Code Scanner</title>
+  <title>QR Scanner</title>
   <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    #result {
+      font-size: 1.5rem;
+      margin-top: 20px;
+    }
+  </style>
 </head>
 <body>
-  <h2>Scan your MidCity QR Code</h2>
+  <h1>Scan Resident QR</h1>
   <div id="reader" style="width:300px;"></div>
-  <script>
-    function onScanSuccess(decodedText, decodedResult) {
-      try {
-        const url = new URL(decodedText);
-        const resident = url.searchParams.get("resident");
-        const token = url.searchParams.get("token");
+  <div id="result"></div>
 
-        if (resident && token) {
-          const redirectUrl = `https://midcityinternapps.adalo.com/merchant-city?target=2a6ta04pmnhppqmbw40kg0rqy&params=%7B%22resident%22%3A%22${resident}%22%2C%22token%22%3A%22${token}%22%7D`;
-          window.location.href = redirectUrl;
-        } else {
-          alert("Invalid QR code.");
-        }
-      } catch (e) {
-        alert("Error parsing QR code.");
+  <script>
+    const resultContainer = document.getElementById("result");
+
+    function checkToken(token) {
+      fetch("https://bctimu.github.io/midcity-scanner/valid_tokens.json")
+        .then(res => res.json())
+        .then(data => {
+          if (data.valid_tokens.includes(token)) {
+            resultContainer.innerHTML = "✅ Verified Resident";
+            resultContainer.style.color = "green";
+          } else {
+            resultContainer.innerHTML = "❌ Invalid QR Code";
+            resultContainer.style.color = "red";
+          }
+        })
+        .catch(() => {
+          resultContainer.innerHTML = "⚠️ Could not verify token";
+          resultContainer.style.color = "orange";
+        });
+    }
+
+    function onScanSuccess(decodedText, decodedResult) {
+      const url = new URL(decodedText);
+      const token = url.searchParams.get("token");
+      if (token) {
+        checkToken(token);
+      } else {
+        resultContainer.innerHTML = "❌ No token found in QR";
+        resultContainer.style.color = "red";
       }
     }
 
-    const html5QrcodeScanner = new Html5QrcodeScanner(
-      "reader", { fps: 10, qrbox: 250 });
-    html5QrcodeScanner.render(onScanSuccess);
+    new Html5Qrcode("reader").start(
+      { facingMode: "environment" },
+      {
+        fps: 10,
+        qrbox: 250
+      },
+      onScanSuccess
+    );
   </script>
 </body>
 </html>
