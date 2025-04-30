@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>QR Code Scanner</title>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+</head>
+<body>
+  <h2>Scan your MidCity QR Code</h2>
+  <div id="reader" style="width:300px;"></div>
+  <script>
+    function onScanSuccess(decodedText, decodedResult) {
+      try {
+        const url = new URL(decodedText);
+        const resident = url.searchParams.get("resident");
+        const token = url.searchParams.get("token");
+
+        if (resident && token) {
+          const redirectUrl = `https://midcityinternapps.adalo.com/merchant-city?target=2a6ta04pmnhppqmbw40kg0rqy&params=%7B%22resident%22%3A%22${resident}%22%2C%22token%22%3A%22${token}%22%7D`;
+          window.location.href = redirectUrl;
+        } else {
+          alert("Invalid QR code.");
+        }
+      } catch (e) {
+        alert("Error parsing QR code.");
+      }
+    }
+
+    const html5QrcodeScanner = new Html5QrcodeScanner(
+      "reader", { fps: 10, qrbox: 250 });
+    html5QrcodeScanner.render(onScanSuccess);
+  </script>
+</body>
+</html>
