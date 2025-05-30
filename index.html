@@ -19,6 +19,15 @@
     const resultContainer = document.getElementById("result");
 
     function checkToken(token) {
+      fetch("https://bctimu.github.io/midcity-scanner/blockchain.json")
+  .then(res => res.json())
+  .then(blockchain => {
+    const block = blockchain.find(b => b.data.hash === token);
+    if (block) {
+      console.log("⛓️ Found on blockchain:", block);
+      // You could show timestamp or block index if you want
+    }
+  });
       fetch("https://bctimu.github.io/midcity-scanner/valid_tokens.json")
         .then(res => res.json())
         .then(data => {
