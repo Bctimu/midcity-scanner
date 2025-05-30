@@ -3,7 +3,6 @@
 <head>
   <title>QR Scanner</title>
   <script src="https://unpkg.com/html5-qrcode"></script>
-  <script async src="https://openfpcdn.io/fingerprintjs/v3" onload="initFingerprint()"></script>
   <style>
     #result {
       font-size: 1.5rem;
@@ -17,47 +16,33 @@
   <div id="result"></div>
 
   <script>
-    let deviceFingerprint = null;
-
-    async function initFingerprint() {
-      const fp = await FingerprintJS.load();
-      const result = await fp.get();
-      deviceFingerprint = result.visitorId;
-    }
-
     const resultContainer = document.getElementById("result");
 
-    async function generateExpectedToken(residentID) {
-      const secretKey = "YourHardcodedSecret";
-      const combined = residentID + deviceFingerprint + secretKey;
-      const encoder = new TextEncoder();
-      const data = encoder.encode(combined);
-      const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-      return hashHex;
-    }
-
-    async function checkToken(token, residentID) {
-      const expectedToken = await generateExpectedToken(residentID);
-      if (token === expectedToken) {
-        resultContainer.innerHTML = "✅ Verified Resident";
-        resultContainer.style.color = "green";
-      } else {
-        resultContainer.innerHTML = "❌ Invalid QR Code";
-        resultContainer.style.color = "red";
-      }
+    function checkToken(token) {
+      fetch("https://bctimu.github.io/midcity-scanner/valid_tokens.json")
+        .then(res => res.json())
+        .then(data => {
+          if (data.valid_tokens.includes(token)) {
+            resultContainer.innerHTML = "✅ Verified Resident";
+            resultContainer.style.color = "green";
+          } else {
+            resultContainer.innerHTML = "❌ Invalid QR Code";
+            resultContainer.style.color = "red";
+          }
+        })
+        .catch(() => {
+          resultContainer.innerHTML = "⚠️ Could not verify token";
+          resultContainer.style.color = "orange";
+        });
     }
 
     function onScanSuccess(decodedText, decodedResult) {
       const url = new URL(decodedText);
       const token = url.searchParams.get("token");
-      const residentID = url.searchParams.get("residentID");
-
-      if (token && residentID) {
-        checkToken(token, residentID);
+      if (token) {
+        checkToken(token);
       } else {
-        resultContainer.innerHTML = "❌ Token or Resident ID missing in QR";
+        resultContainer.innerHTML = "❌ No token found in QR";
         resultContainer.style.color = "red";
       }
     }
